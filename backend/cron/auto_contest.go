@@ -41,7 +41,7 @@ func RunAutoContestRegistration() {
 		_ = json.Unmarshal([]byte(user.GoogleToken), &token)
 
 		ctx := context.Background()
-		srv, err := calendar.NewService(ctx, option.WithTokenSource(services.GoogleOAuthConfig.TokenSource(ctx, &token)))
+		srv, err := calendar.NewService(ctx, option.WithTokenSource(services.GetGoogleOAuthConfig().TokenSource(ctx, &token)))
 		if err != nil {
 			log.Println("Calendar service error:", err)
 			continue

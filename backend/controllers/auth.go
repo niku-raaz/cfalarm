@@ -3,7 +3,7 @@ package controllers
 import (
 	"cfalarm/config"
 	"cfalarm/models"
-	"cfalarm/services" 
+	"cfalarm/services"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -16,7 +16,9 @@ import (
 
 // STEP 1: Redirect user to Google
 func GoogleLogin(c *gin.Context) {
-	url := services.GoogleOAuthConfig.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
+	// Use the function to get a fresh config with loaded env vars
+	googleOAuthConfig := services.GetGoogleOAuthConfig()
+	url := googleOAuthConfig.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
@@ -28,8 +30,11 @@ func GoogleCallback(c *gin.Context) {
 		return
 	}
 
+	// Also use the function here
+	googleOAuthConfig := services.GetGoogleOAuthConfig()
+
 	// Exchange code for token
-	token, err := services.GoogleOAuthConfig.Exchange(context.Background(), code)
+	token, err := googleOAuthConfig.Exchange(context.Background(), code)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to exchange code"})
 		return
@@ -38,7 +43,7 @@ func GoogleCallback(c *gin.Context) {
 	tokenJSON, _ := json.Marshal(token)
 
 	// Fetch user info from Google API
-	client := services.GoogleOAuthConfig.Client(context.Background(), token)
+	client := googleOAuthConfig.Client(context.Background(), token)
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user info"})
@@ -61,12 +66,12 @@ func GoogleCallback(c *gin.Context) {
 	if err := db.Where("email = ?", gUser.Email).First(&user).Error; err != nil {
 		// create new user
 		user = models.User{
-			Name:  gUser.Name,
-			Email: gUser.Email,
+			Name:        gUser.Name,
+			Email:       gUser.Email,
 			GoogleToken: string(tokenJSON),
 		}
 		db.Create(&user)
-	}else{
+	} else {
 		db.Model(&user).Update("google_token", string(tokenJSON))
 	}
 
@@ -80,5 +85,7 @@ func GoogleCallback(c *gin.Context) {
 	tokenString, _ := jwtToken.SignedString([]byte(config.GetEnv("JWT_SECRET")))
 
 	// Return token to frontend (or set cookie if you prefer)
-	c.JSON(http.StatusOK, gin.H{"token": tokenString})
+	//c.JSON(http.StatusOK, gin.H{"token": tokenString})
+	frontendURL := "http://localhost:3000/auth/callback?token=" + tokenString
+    c.Redirect(http.StatusTemporaryRedirect, frontendURL)
 }

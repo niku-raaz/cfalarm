@@ -1,8 +1,13 @@
 import Navbar from '../components/Navbar';
+import { useRouter } from 'next/router'; // Import the router hook
 
 export default function Login() {
+  const router = useRouter(); // Initialize the router
+
   const handleLogin = () => {
-    window.location.href = 'http://localhost:8080/api/auth/google'; 
+    // This line is correct. It sends the user to the backend to start the Google login flow.
+    window.location.href = 'http://localhost:8080/api/auth/google';
+    
   };
 
   return (

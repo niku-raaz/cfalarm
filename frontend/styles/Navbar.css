@@ -1,0 +1,14 @@
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #0b3d91;
+  color: white;
+  padding: 1rem 2rem;
+}
+
+.navbar .links a {
+  margin-left: 1rem;
+  color: white;
+  font-weight: bold;
+}

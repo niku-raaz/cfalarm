@@ -2,7 +2,7 @@ import Navbar from '../components/Navbar';
 
 export default function Login() {
   const handleLogin = () => {
-    window.location.href = 'http://localhost:8080/auth/google'; // replace with your backend URL
+    window.location.href = 'http://localhost:8080/api/auth/google'; 
   };
 
   return (

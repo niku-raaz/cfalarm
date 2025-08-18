@@ -9,7 +9,7 @@ import (
 
 var DB *gorm.DB
 
-func SetupDatabase() *gorm.DB {
+func SetupDatabase() (*gorm.DB, error) {
 	dsn := GetEnv("DATABASE_URL")
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -18,5 +18,5 @@ func SetupDatabase() *gorm.DB {
 	}
 
 	DB = db
-	return db
+	return db, nil
 }

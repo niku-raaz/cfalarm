@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sendgrid/sendgrid-go/v3"
-	"github.com/sendgrid/sendgrid-go/v3/helpers/mail"
+	"github.com/sendgrid/sendgrid-go"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
 
 func SendReminderEmail(to string, content string) error {

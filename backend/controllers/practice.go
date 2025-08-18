@@ -18,7 +18,7 @@ func GetTodayProblems(c *gin.Context) {
 }
 
 func GetRecentProblems(c *gin.Context) {
-	userID := c.GetUint("user_id")
+	//userID := c.GetUint("user_id")
 	var problems []models.PracticeProblem
 	config.DB.Where("user_id = ? AND status = 'unsolved'").
 		Order("date_assigned desc").Limit(10).Find(&problems)

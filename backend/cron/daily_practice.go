@@ -24,7 +24,7 @@ func RunDailyPractice() {
 
 		// pick first result for simplicity
 		if len(problems1) > 0 && len(problems2) > 0 {
-			date := time.Now().Format("2006-01-02")
+			//date := time.Now().Format("2006-01-02")
 
 			pp1 := models.PracticeProblem{
 				UserID:       user.ID,

@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"net/http"
-	"cfalarm/config"
+	//"cfalarm/config"
 	"github.com/gin-gonic/gin"
 )
 

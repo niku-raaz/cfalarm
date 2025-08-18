@@ -8,9 +8,11 @@ import (
 	"cfalarm/config"
 	"cfalarm/models"
 	"cfalarm/services"
-	"google.golang.org/api/option"
-	"google.golang.org/api/calendar/v3"
 	"encoding/json"
+
+	"golang.org/x/oauth2"
+	"google.golang.org/api/calendar/v3"
+	"google.golang.org/api/option"
 )
 
 func RunAutoContestRegistration() {
@@ -18,8 +20,8 @@ func RunAutoContestRegistration() {
 
 	// 1. Get upcoming CF contests (placeholder)
 	// Example contest (replace later with CF API response)
-	startTime := time.Now().Add(48 * time.Hour)         // two days from now
-	endTime := startTime.Add(2 * time.Hour)             // 2h duration
+	startTime := time.Now().Add(48 * time.Hour) // two days from now
+	endTime := startTime.Add(2 * time.Hour)     // 2h duration
 	contestName := "Codeforces Round (Example)"
 
 	var users []models.User

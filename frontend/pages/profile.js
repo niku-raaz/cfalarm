@@ -5,120 +5,138 @@ import axios from 'axios';
 
 export default function Profile() {
   const router = useRouter();
-  // State to hold user data
   const [user, setUser] = useState(null);
-  // State to manage the Codeforces ID input field
   const [codeforcesId, setCodeforcesId] = useState('');
-  // State for loading and error messages
+  const [apiKey, setApiKey] = useState('');
+  const [apiSecret, setApiSecret] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
 
   useEffect(() => {
-    // This function fetches the user's profile data from the backend.
     const fetchProfile = async () => {
-      // Retrieve the auth token from localStorage.
       const token = localStorage.getItem('authToken');
-
-      // If there's no token, the user is not logged in. Redirect them.
       if (!token) {
         router.replace('/login');
         return;
       }
-
       try {
-        // Make an authenticated GET request to the /api/user/me endpoint.
         const response = await axios.get('http://localhost:8080/api/user/me', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
-        
-        // On success, update the component's state with the user data.
-        setUser(response.data);
-        setCodeforcesId(response.data.CodeforcesID || ''); // Pre-fill the input
+        const userData = response.data;
+        setUser(userData);
+        setCodeforcesId(userData.CodeforcesID || '');
+        // We still fetch these to check if they exist, but they won't be shown initially
+        if (userData.CfApiKey) {
+          setIsVerified(true);
+        }
       } catch (err) {
-        // If the request fails (e.g., token is invalid), set an error message.
         setError('Failed to fetch profile. Please log in again.');
-        localStorage.removeItem('authToken'); // Clear the bad token
+        localStorage.removeItem('authToken');
       } finally {
         setLoading(false);
       }
     };
-
     fetchProfile();
   }, [router]);
 
-  // This function is called when the user saves their Codeforces ID.
-  const handleUpdateProfile = async (e) => {
-    e.preventDefault(); // Prevent the default form submission behavior
+  const handleVerifyAndSave = async (e) => {
+    e.preventDefault();
     const token = localStorage.getItem('authToken');
     if (!token) return;
 
+    setIsSaving(true);
+    setMessage('');
+    setError('');
+
     try {
-      // Make an authenticated PUT request to update the user's profile.
-      await axios.put(
-        'http://localhost:8080/api/user/me',
+      const response = await axios.post(
+        'http://localhost:8080/api/user/verify-cf-keys',
         {
-          CodeforcesID: codeforcesId,
+          codeforcesId: codeforcesId,
+          apiKey: apiKey,
+          apiSecret: apiSecret,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      // On success, show a confirmation message.
-      setMessage('Profile updated successfully!');
+      setMessage(response.data.message);
+      setIsVerified(true); 
     } catch (err) {
-      setError('Failed to update profile.');
+      const errorMessage = err.response?.data?.error || 'An error occurred during verification.';
+      setError(errorMessage);
+    } finally {
+      setIsSaving(false);
     }
   };
-  
-  // Display a loading message while data is being fetched.
+
+  // --- NEW HANDLER FUNCTION ---
+  // This function will clear the API keys and show the form.
+  const handleUpdateClick = () => {
+    setApiKey('');
+    setApiSecret('');
+    setIsVerified(false);
+  };
+
   if (loading) {
-    return (
-      <div>
-        <Navbar />
-        <div style={{ padding: '2rem' }}>Loading...</div>
-      </div>
-    );
+    return ( <div><Navbar /><div style={{ padding: '2rem' }}>Loading...</div></div> );
   }
 
   return (
     <div>
       <Navbar />
       <div style={{ padding: '2rem' }}>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
         {user && (
           <div>
             <h2>User Profile</h2>
             <p><strong>Name:</strong> {user.Name}</p>
             <p><strong>Email:</strong> {user.Email}</p>
 
-            <form onSubmit={handleUpdateProfile}>
-              <div style={{ marginTop: '1rem' }}>
-                <label htmlFor="codeforcesId">
-                  <strong>Codeforces ID:</strong>
-                </label>
-                <br />
-                <input
-                  id="codeforcesId"
-                  type="text"
-                  value={codeforcesId}
-                  onChange={(e) => setCodeforcesId(e.target.value)}
-                  placeholder="Enter your Codeforces handle"
-                  style={{ padding: '0.5rem', marginTop: '0.5rem', width: '250px' }}
-                />
+            {isVerified ? (
+              <div style={{ marginTop: '2rem' }}>
+                <p><strong>Codeforces Handle:</strong> {codeforcesId}</p>
+                <p style={{ color: 'green' }}>✓ Credentials Verified</p>
+                {/* Use the new handler function here */}
+                <button
+                  onClick={handleUpdateClick}
+                  style={{ padding: '0.5rem 1rem', fontSize: '1rem', marginTop: '1rem' }}
+                >
+                  Update Credentials
+                </button>
               </div>
-              <button
-                type="submit"
-                style={{ padding: '0.5rem 1rem', fontSize: '1rem', marginTop: '1rem' }}
-              >
-                Save
-              </button>
-            </form>
+            ) : (
+              <>
+                <p style={{ marginTop: '2rem', fontStyle: 'italic' }}>
+                  Generate your API keys at: 
+                  <a href="https://codeforces.com/settings/api" target="_blank" rel="noopener noreferrer">
+                    codeforces.com/settings/api
+                  </a>
+                </p>
+
+                <form onSubmit={handleVerifyAndSave}>
+                  <div style={{ marginTop: '1rem' }}>
+                    <label><strong>Codeforces Handle:</strong></label><br />
+                    <input type="text" value={codeforcesId} onChange={(e) => setCodeforcesId(e.target.value)} placeholder="Your Codeforces Handle" style={{ padding: '0.5rem', marginTop: '0.5rem', width: '300px' }} />
+                  </div>
+                  <div style={{ marginTop: '1rem' }}>
+                    <label><strong>API Key:</strong></label><br />
+                    <input type="text" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="Your Codeforces API Key" style={{ padding: '0.5rem', marginTop: '0.5rem', width: '300px' }} />
+                  </div>
+                  <div style={{ marginTop: '1rem' }}>
+                    <label><strong>API Secret:</strong></label><br />
+                    <input type="password" value={apiSecret} onChange={(e) => setApiSecret(e.target.value)} placeholder="Your Codeforces API Secret" style={{ padding: '0.5rem', marginTop: '0.5rem', width: '300px' }} />
+                  </div>
+                  <button type="submit" style={{ padding: '0.5rem 1rem', fontSize: '1rem', marginTop: '1rem' }} disabled={isSaving}>
+                    {isSaving ? 'Verifying...' : 'Verify & Save Credentials'}
+                  </button>
+                </form>
+              </>
+            )}
+            
             {message && <p style={{ color: 'green', marginTop: '1rem' }}>{message}</p>}
+            {error && <p style={{ color: 'red', marginTop: '1rem' }}>{error}</p>}
           </div>
         )}
       </div>

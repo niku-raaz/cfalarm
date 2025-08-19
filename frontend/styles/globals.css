@@ -12,3 +12,10 @@ a {
 button {
   cursor: pointer;
 }
+
+/* Add this new class for the contest layout */
+.contests-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start; /* Aligns items to the start */
+}

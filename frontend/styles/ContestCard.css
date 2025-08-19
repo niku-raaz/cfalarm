@@ -1,7 +1,35 @@
+/* Simpler and more robust styles for the contest card */
 .contest-card {
-  background-color: white;
-  padding: 1rem;
-  margin: 1rem 0;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  background-color: #2d2d2d;
+  color: #f1f1f1;
+  border: 1px solid #555;
+  border-radius: 15px;
+  padding: 1.5rem;
+  font-family: 'Courier New', Courier, monospace;
+  
+  /* THIS IS THE KEY CHANGE */
+  width: 48%; /* Set a slightly smaller width */
+  margin: 1%;   /* Add a small margin to create space */
+  
+  box-sizing: border-box;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
+
+.contest-card:hover {
+  transform: translateY(-5px);
+}
+
+.contest-card h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  text-align: center;
+  border-bottom: 1px solid #555;
+  padding-bottom: 1rem;
+}
+
+.contest-card p {
+  margin: 0.5rem 0;
+  font-size: 1rem;
 }

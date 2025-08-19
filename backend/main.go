@@ -4,23 +4,19 @@ import (
 	"cfalarm/config"
 	"cfalarm/controllers"
 	"cfalarm/cron"
-	"log"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	config.LoadEnv()
-    
-	clientID := config.GetEnv("GOOGLE_CLIENT_ID")
-	log.Printf("DEBUG: Loaded GOOGLE_CLIENT_ID is: [%s]", clientID)
-	redirectURL := config.GetEnv("GOOGLE_REDIRECT_URL")
-	log.Printf("DEBUG: Loaded GOOGLE_REDIRECT_URL is: [%s]", redirectURL)
 
 	_, err := config.SetupDatabase()
 	if err != nil {
 		panic("Failed to connect to database")
 	}
+
+	//db.AutoMigrate(&models.User{})
 
 	router := gin.Default()
 	router.Use(config.CORSMiddleware())
@@ -32,15 +28,22 @@ func main() {
 		api.GET("/user/me", controllers.AuthMiddleware(), controllers.GetProfile)
 		api.PUT("/user/me", controllers.AuthMiddleware(), controllers.UpdateProfile)
 
+		api.POST("/user/verify-cf", controllers.AuthMiddleware(), controllers.VerifyAndSaveCFProfile)
+
+		api.POST("/user/verify-cf-keys", controllers.AuthMiddleware(), controllers.VerifyAndSaveCFKeys)
+
 		//api.GET("/ratings", controllers.AuthMiddleware(), controllers.GetRatings)
 		//api.POST("/ratings/fetch", controllers.AuthMiddleware(), controllers.FetchRatings)
 
+		api.GET("/practice/problems", controllers.AuthMiddleware(), controllers.GetPracticeProblems)
 		api.GET("/practice/today", controllers.AuthMiddleware(), controllers.GetTodayProblems)
+
 		api.GET("/practice/recent", controllers.AuthMiddleware(), controllers.GetRecentProblems)
 		api.POST("/practice/mark-solved", controllers.AuthMiddleware(), controllers.MarkSolved)
 		api.POST("/practice/fetch-daily", controllers.FetchDailyProblems)
 
-		api.GET("/contests/upcoming", controllers.AuthMiddleware(), controllers.GetUpcomingContests)
+		api.GET("/contests/upcoming", controllers.GetUpcomingContests)
+		api.GET("/contests/finished", controllers.GetFinishedContests)
 		api.POST("/contests/register", controllers.AuthMiddleware(), controllers.RegisterForContest)
 		api.POST("/contests/auto-register", controllers.AutoRegisterCron)
 

@@ -1,12 +1,44 @@
 package controllers
 
 import (
-	"net/http"
-	"time"
 	"cfalarm/config"
 	"cfalarm/models"
+	"cfalarm/services"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/gin-gonic/gin"
 )
+
+func GetPracticeProblems(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	// Get rating from query param, default to 1200 if not provided
+	ratingStr := c.DefaultQuery("rating", "1200")
+	rating, _ := strconv.Atoi(ratingStr)
+
+	// 1. Get user from DB to find their Codeforces handle
+	var user models.User
+	if err := config.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	if user.CodeforcesID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Please set your Codeforces ID in your profile."})
+		return
+	}
+
+	// 2. Fetch practice problems from the service
+	problems, err := services.GetPracticeProblems(user.CodeforcesID, rating)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch practice problems"})
+		return
+	}
+
+	c.JSON(http.StatusOK, problems)
+}
 
 func GetTodayProblems(c *gin.Context) {
 	userID := c.GetUint("user_id")

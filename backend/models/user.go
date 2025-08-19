@@ -11,6 +11,9 @@ type User struct {
 	CodechefID    string    `gorm:"size:50"`
 	AtcoderID     string    `gorm:"size:50"`
 	LeetcodeID    string    `gorm:"size:50"`
-	GoogleToken   string    `gorm:"type:text"`   // <-- NEW
+	GoogleToken   string    `gorm:"type:text"`   
 	CreatedAt     time.Time
+	CfApiKey      string    `gorm:"size:100"` 
+	CfApiSecret   string    `gorm:"size:100"` 
 }
+ 

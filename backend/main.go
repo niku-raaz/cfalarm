@@ -28,12 +28,7 @@ func main() {
 		api.GET("/user/me", controllers.AuthMiddleware(), controllers.GetProfile)
 		api.PUT("/user/me", controllers.AuthMiddleware(), controllers.UpdateProfile)
 
-		api.POST("/user/verify-cf", controllers.AuthMiddleware(), controllers.VerifyAndSaveCFProfile)
-
-		api.POST("/user/verify-cf-keys", controllers.AuthMiddleware(), controllers.VerifyAndSaveCFKeys)
-
-		//api.GET("/ratings", controllers.AuthMiddleware(), controllers.GetRatings)
-		//api.POST("/ratings/fetch", controllers.AuthMiddleware(), controllers.FetchRatings)
+		api.POST("/user/verify-cf-handle", controllers.AuthMiddleware(), controllers.VerifyAndSaveCFHandle)
 
 		api.GET("/practice/problems", controllers.AuthMiddleware(), controllers.GetPracticeProblems)
 		api.GET("/practice/today", controllers.AuthMiddleware(), controllers.GetTodayProblems)
@@ -44,8 +39,6 @@ func main() {
 
 		api.GET("/contests/upcoming", controllers.GetUpcomingContests)
 		api.GET("/contests/finished", controllers.GetFinishedContests)
-		api.POST("/contests/register", controllers.AuthMiddleware(), controllers.RegisterForContest)
-		api.POST("/contests/auto-register", controllers.AutoRegisterCron)
 
 		api.POST("/notifications/send-reminder", controllers.SendReminderEmail)
 	}

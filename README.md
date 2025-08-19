@@ -8,7 +8,6 @@ CFAlarm is a web application designed for competitive programmers to automate th
 
 - **Google Authentication**: Secure and easy sign-in using your Google account.
 - **User Profile Management**: Update your competitive programming platform handles (Codeforces, Codechef, Atcoder, Leetcode).
-- **Automated Contest Registration**: A scheduled service runs every two days to find upcoming Codeforces contests and automatically register you.
 - **Google Calendar Integration**: Automatically creates events in your primary Google Calendar for every contest you are registered for.
 - **Daily Practice Problems**: Receive two new unsolved problems from Codeforces every day at midnight, scaled to your current rating (x+100 and x+200).
 - **Practice Tracking**: View your recent unsolved practice problems and mark them as solved.

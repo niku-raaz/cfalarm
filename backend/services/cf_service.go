@@ -1,15 +1,10 @@
 package services
 
 import (
-	"crypto/sha512" // Import crypto package
-	"encoding/hex"  // Import hex encoding
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"sort"
-	"strconv"
-	"time"
 )
 
 type CFProblem struct {
@@ -26,47 +21,13 @@ type CFSubmission struct {
 	Verdict string    `json:"verdict"`
 }
 
-func VerifyCFKeys(handle, key, secret string) (bool, error) {
-	if handle == "" || key == "" || secret == "" {
-		return false, errors.New("handle, key, and secret cannot be empty")
+func VerifyCodeforcesHandle(handle string) (bool, error) {
+	if handle == "" {
+		return false, errors.New("handle cannot be empty")
 	}
 
-	// 1. Choose a method and prepare parameters
-	methodName := "user.info"
-	params := map[string]string{
-		"handles": handle,
-		"apiKey":  key,
-		"time":    strconv.FormatInt(time.Now().Unix(), 10),
-	}
-
-	// 2. Create the parameter string for hashing
-	var paramList []string
-	for k, v := range params {
-		paramList = append(paramList, fmt.Sprintf("%s=%s", k, v))
-	}
-	sort.Strings(paramList) // Sort params alphabetically
-	paramString := ""
-	for i, p := range paramList {
-		if i > 0 {
-			paramString += "&"
-		}
-		paramString += p
-	}
-
-	// 3. Create the string to be hashed
-	randStr := "123456" // 6-letter random string
-	hashInput := fmt.Sprintf("%s/%s?%s#%s", randStr, methodName, paramString, secret)
-
-	// 4. Calculate the SHA512 hash
-	hasher := sha512.New()
-	hasher.Write([]byte(hashInput))
-	apiSig := hex.EncodeToString(hasher.Sum(nil))
-
-	// 5. Construct the final API URL
-	finalURL := fmt.Sprintf("https://codeforces.com/api/%s?%s&apiSig=%s%s", methodName, paramString, randStr, apiSig)
-
-	// 6. Make the API call and check the status
-	resp, err := http.Get(finalURL)
+	url := fmt.Sprintf("https://codeforces.com/api/user.info?handles=%s", handle)
+	resp, err := http.Get(url)
 	if err != nil {
 		return false, err
 	}
@@ -75,12 +36,20 @@ func VerifyCFKeys(handle, key, secret string) (bool, error) {
 	var result struct {
 		Status string `json:"status"`
 	}
+
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return false, err
 	}
+    
+    // The API returns "OK" if the user exists and "FAILED" otherwise.
+	if result.Status == "OK" {
+		return true, nil
+	}
 
-	return result.Status == "OK", nil
+	return false, nil
 }
+
+
 
 // Fetches all problems from the problemset
 func fetchAllProblems() ([]CFProblem, error) {
@@ -126,34 +95,6 @@ func fetchSolvedProblems(handle string) (map[string]bool, error) {
 		}
 	}
 	return solved, nil
-}
-
-func VerifyCodeforcesHandle(handle string) (bool, error) {
-	if handle == "" {
-		return false, errors.New("handle cannot be empty")
-	}
-
-	url := fmt.Sprintf("https://codeforces.com/api/user.info?handles=%s", handle)
-	resp, err := http.Get(url)
-	if err != nil {
-		return false, err
-	}
-	defer resp.Body.Close()
-
-	var result struct {
-		Status string `json:"status"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return false, err
-	}
-
-	// The API returns "OK" if the user exists and "FAILED" otherwise.
-	if result.Status == "OK" {
-		return true, nil
-	}
-
-	return false, nil
 }
 
 // --- NEW FUNCTION to get practice problems for a user ---

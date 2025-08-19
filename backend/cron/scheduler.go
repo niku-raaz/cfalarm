@@ -18,8 +18,8 @@ func Start() {
 		RunDailyReminder()
 	})
 
-	// Every 2 days @ midnight
-	_, _ = c.AddFunc("* * * * *", func() {
+	// Every 2 days @ midnight // every 2 days
+	_, _ = c.AddFunc("0 0 */2 * *", func() {
 		RunAutoContestRegistration()
 	})
 

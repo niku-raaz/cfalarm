@@ -19,7 +19,7 @@ func Start() {
 	})
 
 	// Every 2 days @ midnight
-	_, _ = c.AddFunc("0 0 */2 * *", func() {
+	_, _ = c.AddFunc("* * * * *", func() {
 		RunAutoContestRegistration()
 	})
 

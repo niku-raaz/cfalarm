@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"cfalarm/config"
@@ -48,22 +50,6 @@ func RunAutoContestRegistration() {
 	for _, user := range users {
 		log.Printf("Processing user: %s", user.Email)
 		for _, contest := range upcomingContests {
-			// (Optional but recommended) Check if the user is already registered for this contest
-			// to avoid unnecessary API calls and potential errors. This would require another
-			// API call to contest.standings and checking if the user's handle is in the list.
-			// For simplicity, we will attempt to register for all. The API will just return an
-			// error if already registered, which we can handle.
-
-			log.Printf("Attempting to register %s for contest '%s'", user.CodeforcesID, contest.Name)
-			err := registerUserForContest(user.CodeforcesID, user.CfApiKey, user.CfApiSecret, contest.ID)
-			if err != nil {
-				// Log the error but continue; it might be that the user is already registered.
-				log.Printf("Could not register for contest %d for user %s: %v", contest.ID, user.CodeforcesID, err)
-				continue // Move to the next contest
-			}
-
-			log.Printf("Successfully registered %s for contest: %s", user.CodeforcesID, contest.Name)
-
 			// 4. Create Google Calendar event
 			addContestToCalendar(user, contest)
 		}
@@ -80,30 +66,40 @@ func registerUserForContest(handle, key, secret string, contestID int) error {
 		"time":      strconv.FormatInt(time.Now().Unix(), 10),
 	}
 
-	// Create the signature (apiSig)
 	var paramList []string
 	for k, v := range params {
 		paramList = append(paramList, fmt.Sprintf("%s=%s", k, v))
 	}
 	sort.Strings(paramList)
-	paramString := ""
+	paramStringForHash := ""
 	for i, p := range paramList {
 		if i > 0 {
-			paramString += "&"
+			paramStringForHash += "&"
 		}
-		paramString += p
+		paramStringForHash += p
 	}
 
-	randStr := "123456" // This should be a 6-char random string for production
-	hashInput := fmt.Sprintf("%s/%s?%s#%s", randStr, methodName, paramString, secret)
+	randStr := "123456"
+	hashInput := fmt.Sprintf("%s/%s?%s#%s", randStr, methodName, paramStringForHash, secret)
 	hasher := sha512.New()
 	hasher.Write([]byte(hashInput))
 	apiSig := hex.EncodeToString(hasher.Sum(nil))
 
-	finalURL := fmt.Sprintf("https://codeforces.com/api/%s?%s&apiSig=%s%s", methodName, paramString, randStr, apiSig)
+	// --- THIS IS THE FIX ---
+	// 1. The base URL does not contain the parameters.
+	apiURL := fmt.Sprintf("https://codeforces.com/api/%s", methodName)
 
-	// Codeforces requires a POST request for this method
-	resp, err := http.Post(finalURL, "application/x-www-form-urlencoded", nil)
+	// 2. The parameters are encoded into a form body.
+	formData := url.Values{}
+	formData.Set("contestId", strconv.Itoa(contestID))
+	formData.Set("apiKey", key)
+	formData.Set("time", strconv.FormatInt(time.Now().Unix(), 10))
+	formData.Set("apiSig", randStr+apiSig) // The signature includes the random prefix
+
+	// 3. Make the POST request with the correct body and content type.
+	resp, err := http.Post(apiURL, "application/x-www-form-urlencoded", strings.NewReader(formData.Encode()))
+	// --- END OF FIX ---
+
 	if err != nil {
 		return err
 	}
@@ -113,11 +109,15 @@ func registerUserForContest(handle, key, secret string, contestID int) error {
 		Status  string `json:"status"`
 		Comment string `json:"comment"`
 	}
+
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return fmt.Errorf("failed to decode response from Codeforces: %w", err)
+		// If decoding fails, it's likely an HTML error page.
+		// We can return a more user-friendly error.
+		return fmt.Errorf("registration failed (user may already be registered or registration is closed)")
 	}
 
 	if result.Status != "OK" {
+		// If it's a valid JSON response but not "OK", use the comment from the API.
 		return fmt.Errorf("API error: %s", result.Comment)
 	}
 	return nil
